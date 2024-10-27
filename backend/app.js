@@ -13,7 +13,7 @@ console.log(process.env.PORT)
 app.use(cors({
     origin: [process.env.FRONTEND_URL],
     methods: ["POST"],
-    credentials: true
+    credentials: true,
 }));
 
 app.use(express.json());
@@ -50,6 +50,8 @@ router.post("/send/mail", async(req,res,next)=>{
 
     }
 })
+
+app.use(router)
 
 app.listen(process.env.PORT, ()=>{
     console.log(`Server listening at port ${process.env.PORT}`);
