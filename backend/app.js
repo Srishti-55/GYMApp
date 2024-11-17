@@ -2,7 +2,7 @@ import express from "express"
 import { config } from "dotenv";
 import cors from "cors";
 import {sendEmail} from "./utils/sendEmail.js"
-import { MongoClient, ServerApiVersion } from "mongodb"
+import { MongoClient, ServerApiVersion, ObjectId } from "mongodb"
 
 const app = express();
 const router = express.Router();
@@ -108,6 +108,7 @@ app.get("/", (req, res) => {
     res.send("Welcome to the Gym App Backend!");
 });
 
+// add new classes
 app.post("/new-class", async (req, res) => {
 try {
       const newClass = req.body;
@@ -125,6 +126,81 @@ try {
       });
     }
   });
+
+// get all approved classes
+app.get('/classes', async(req, res) => {
+      const query = {status: 'approved'};
+      const result  = await classesCollection.find().toArray();
+      res.send(result);
+})
+
+// get classes by instructor email address
+app.get('/classes/:email', async(req, res) => {
+    const email = req.params.email;
+    const query = {instructorEmail: email};
+    const result = await classesCollection.find(query).toArray();
+    res.send(result);
+})
+
+// manage classes
+app.get('/classes-manage', async(req,res) => {
+    const result = await classesCollection.find().toArray();
+    res.send(result);
+})
+
+// update classes status and reason
+app.patch('/change-status/:id', async(req, res) => {
+    const id = req.params.id;
+    const status = req.body.status;
+    const reason = req.body.reason;
+    const filter = {_id: new ObjectId(id)};
+    const options = { upsert: true}
+    const updateDoc = {
+        $set: {
+            status: status,
+            reason: reason,
+        },
+    };
+    const result = await  classesCollection.updateOne(filter, updateDoc, options);
+    res.send(result);
+})
+
+// get approved classes
+app.get('/approved-classes', async(req,res) => {
+    const query = {status: "approved"};
+    const result = await classesCollection.find(query).toArray();
+    res.send(result);
+});
+
+// get single class details
+app.get('/class/:id', async (req, res) => {
+    const id = req.params.id;
+    const  query = {_id: new Object(id)};
+    const result = await classesCollection.findOne(query);
+    res.send(result);
+})
+
+// update class details (all data)
+app.put('/update-class/:id', async(req, res)=> {
+    const id = req.params.id;
+    const updateClass = req.body;
+    const filter = {_id: new ObjectId(id)};
+    const options = {upsert: true};
+    const updateDoc = {
+        $set: {
+            name: updateClass.name,
+            description: updateClass.description,
+            price: updateClass.price,
+            availableSeats: parseInt(updateClass.availableSeats),
+            videoLink: updateClass.videoLink,
+            status: "pending",
+        }
+    }
+
+    const result = await classesCollection.updateOne(filter, updateDoc, options);
+    res.send(result);
+
+})
 
 router.post("/send/mail", async(req,res,next)=>{
     const {name,email,message} = req.body;
